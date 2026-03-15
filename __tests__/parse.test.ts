@@ -189,6 +189,110 @@ body`
     const manifest = parseSkillMd(content)
     expect(manifest.endpoints[0].method).toBe('POST')
   })
+
+  it('parses Anthropic-compatible skill (no endpoints, no payment)', () => {
+    const content = `---
+name: code-reviewer
+description: >-
+  This skill should be used when the user asks to "review code",
+  "check for bugs", or mentions code quality.
+version: 1.0.0
+allowed-tools: [Read, Grep, Glob]
+---
+
+# Code Reviewer
+
+When reviewing code, check for security vulnerabilities.`
+
+    const manifest = parseSkillMd(content)
+
+    expect(manifest.name).toBe('code-reviewer')
+    expect(manifest.description).toContain('review code')
+    expect(manifest.type).toBe('SKILL')
+    expect(manifest.version).toBe('1.0.0')
+    expect(manifest.allowedTools).toEqual(['Read', 'Grep', 'Glob'])
+    expect(manifest.base_url).toBe('')
+    expect(manifest.endpoints).toEqual([])
+    expect(manifest.payment.payTo).toBe('')
+    expect(manifest.body).toContain('Code Reviewer')
+  })
+
+  it('parses allowed-tools as single string', () => {
+    const content = `---
+name: simple-skill
+description: A simple skill
+allowed-tools: Bash
+---
+
+body`
+
+    const manifest = parseSkillMd(content)
+    expect(manifest.allowedTools).toEqual(['Bash'])
+    expect(manifest.type).toBe('SKILL')
+  })
+
+  it('parses license field', () => {
+    const content = `---
+name: test
+description: test
+base_url: https://example.com
+license: MIT
+payment:
+  networks: [base]
+  payTo: "0x1234567890abcdef1234567890abcdef12345678"
+endpoints:
+  - path: /test
+    method: POST
+    description: test
+    priceUsdc: "0.01"
+---
+
+body`
+
+    const manifest = parseSkillMd(content)
+    expect(manifest.license).toBe('MIT')
+  })
+
+  it('infers type SKILL when no endpoints are present', () => {
+    const content = `---
+name: my-skill
+description: Does something
+---
+
+Instructions here.`
+
+    const manifest = parseSkillMd(content)
+    expect(manifest.type).toBe('SKILL')
+  })
+
+  it('parses hybrid skill (endpoints + allowed-tools)', () => {
+    const content = `---
+name: weather-helper
+description: >-
+  This skill should be used when the user asks about weather.
+base_url: https://api.weather.com
+type: API
+allowed-tools: [Read, Bash]
+payment:
+  networks: [stellar]
+  payTo: GABCDEFGHIJKLMNOPQRSTUVWXYZ234567ABCDEFGHIJKLMNOPQRSTUVW
+endpoints:
+  - path: /v1/current
+    method: POST
+    description: Get weather
+    priceUsdc: "0.001"
+---
+
+# Weather Helper
+
+Call /v1/current for current conditions.`
+
+    const manifest = parseSkillMd(content)
+    expect(manifest.type).toBe('API')
+    expect(manifest.allowedTools).toEqual(['Read', 'Bash'])
+    expect(manifest.endpoints).toHaveLength(1)
+    expect(manifest.payment.payTo).toContain('GABC')
+  })
 })
 
 describe('parseFrontmatter', () => {

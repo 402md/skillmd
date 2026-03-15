@@ -243,4 +243,49 @@ endpoints:
     expect(result.valid).toBe(false)
     expect(result.errors[0].code).toBe('PARSE_ERROR')
   })
+
+  it('validates Anthropic-compatible skill (type: SKILL)', () => {
+    const content = `---
+name: code-reviewer
+description: This skill should be used when the user asks to review code.
+version: 1.0.0
+allowed-tools: [Read, Grep]
+---
+
+# Code Reviewer`
+
+    const result = validateSkillMd(content)
+    expect(result.valid).toBe(true)
+    expect(result.errors).toEqual([])
+  })
+
+  it('validates SKILL type without base_url, payment, or endpoints', () => {
+    const manifest = makeManifest({
+      type: 'SKILL',
+      base_url: '',
+      payment: { networks: ['base'], asset: 'USDC', payTo: '' },
+      endpoints: []
+    })
+    const result = validateSkill(manifest)
+    expect(result.valid).toBe(true)
+  })
+
+  it('still validates endpoints when SKILL type has them', () => {
+    const manifest = makeManifest({
+      type: 'SKILL',
+      base_url: '',
+      payment: { networks: ['base'], asset: 'USDC', payTo: '' },
+      endpoints: [
+        {
+          path: 'no-slash',
+          method: 'POST',
+          description: 'test',
+          priceUsdc: '0.01'
+        }
+      ]
+    })
+    const result = validateSkill(manifest)
+    expect(result.valid).toBe(false)
+    expect(result.errors.some(e => e.field.includes('path'))).toBe(true)
+  })
 })
