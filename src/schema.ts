@@ -12,7 +12,7 @@ export const SKILLMD_JSON_SCHEMA = {
   title: 'SKILL.md Frontmatter',
   description: 'Schema for the YAML frontmatter in a SKILL.md file',
   type: 'object',
-  required: ['name', 'description', 'base_url', 'payment', 'endpoints'],
+  required: ['name', 'description'],
   properties: {
     name: {
       type: 'string',
@@ -30,7 +30,7 @@ export const SKILLMD_JSON_SCHEMA = {
       type: 'string',
       minLength: 1,
       maxLength: 2000,
-      description: 'What this skill does'
+      description: 'What this skill does. For agent-invoked skills, use trigger phrases.'
     },
     version: {
       type: 'string',
@@ -40,6 +40,10 @@ export const SKILLMD_JSON_SCHEMA = {
     author: {
       type: 'string',
       maxLength: 100
+    },
+    license: {
+      type: 'string',
+      description: 'License identifier (e.g. MIT, proprietary)'
     },
     base_url: {
       type: 'string',
@@ -144,6 +148,21 @@ export const SKILLMD_JSON_SCHEMA = {
       type: 'string',
       format: 'uri',
       description: 'Free test endpoint URL'
+    },
+    'allowed-tools': {
+      oneOf: [
+        { type: 'string' },
+        { type: 'array', items: { type: 'string' } }
+      ],
+      description:
+        'Tools the skill is allowed to use (Anthropic Claude Code compatibility)'
+    },
+    allowedTools: {
+      oneOf: [
+        { type: 'string' },
+        { type: 'array', items: { type: 'string' } }
+      ],
+      description: 'Alias for allowed-tools (camelCase)'
     }
   },
   additionalProperties: true

@@ -6,6 +6,7 @@ export interface SkillManifest {
   description: string
   version?: string
   author?: string
+  license?: string
   base_url: string
   type: SkillType
 
@@ -23,6 +24,9 @@ export interface SkillManifest {
   sla?: string
   rateLimit?: string
   sandbox?: string
+
+  // Agent integration (Anthropic Claude Code compatibility)
+  allowedTools?: string[]
 
   // Raw body (markdown after frontmatter)
   body: string
@@ -52,6 +56,7 @@ export type SkillType =
   | 'SERVICE'
   | 'SUBSCRIPTION'
   | 'CONTENT'
+  | 'SKILL'
 
 export type PaymentNetwork =
   | 'stellar'
@@ -91,15 +96,17 @@ export interface SkillConfig {
   description: string
   version?: string
   author?: string
-  base_url: string
+  license?: string
+  base_url?: string
   type?: SkillType
-  payment: PaymentConfig
-  endpoints: EndpointSpec[]
+  payment?: PaymentConfig
+  endpoints?: EndpointSpec[]
   tags?: string[]
   category?: string
   sla?: string
   rateLimit?: string
   sandbox?: string
+  allowedTools?: string[]
   body?: string
 }
 
@@ -164,4 +171,53 @@ export interface LegacyFrontmatter {
     description?: string
   }[]
   [key: string]: unknown
+}
+
+// ── A2A Agent Card Types (v0.3.0) ──────────────────────
+
+export interface A2AAgentCard {
+  schemaVersion: string
+  humanReadableId: string
+  agentVersion: string
+  name: string
+  description: string
+  url: string
+  protocolVersion: string
+  preferredTransport: A2ATransport
+  provider: A2AProvider
+  capabilities: A2ACapabilities
+  authSchemes: A2AAuthScheme[]
+  defaultInputModes?: string[]
+  defaultOutputModes?: string[]
+  skills?: A2ASkill[]
+  documentationUrl?: string
+}
+
+export type A2ATransport = 'JSONRPC' | 'gRPC' | 'REST'
+
+export interface A2AProvider {
+  name: string
+  url?: string
+}
+
+export interface A2ACapabilities {
+  a2aVersion: string
+  streaming?: boolean
+  pushNotifications?: boolean
+}
+
+export interface A2AAuthScheme {
+  scheme: string
+  serviceUrl?: string
+  [key: string]: unknown
+}
+
+export interface A2ASkill {
+  id: string
+  name: string
+  description: string
+  tags?: string[]
+  examples?: string[]
+  inputModes?: string[]
+  outputModes?: string[]
 }

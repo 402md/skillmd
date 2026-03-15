@@ -62,13 +62,21 @@ function buildManifest(
 ): SkillManifest {
   const name = requireString(data, 'name')
   const description = requireString(data, 'description')
-  const base_url = requireString(data, 'base_url')
 
-  const rawType = getString(data, 'type') ?? 'API'
+  const rawType = getString(data, 'type') ?? (data.endpoints ? 'API' : 'SKILL')
   const type = SKILL_TYPES_SET.has(rawType) ? (rawType as SkillType) : 'API'
+
+  // base_url is optional for SKILL type (pure agent instructions)
+  const base_url =
+    type === 'SKILL'
+      ? getString(data, 'base_url') ?? ''
+      : requireString(data, 'base_url')
 
   const payment = parsePayment(data)
   const endpoints = parseEndpoints(data)
+
+  // allowed-tools: Anthropic uses kebab-case, normalize to camelCase
+  const allowedTools = parseAllowedTools(data)
 
   return {
     name,
@@ -76,6 +84,7 @@ function buildManifest(
     description,
     version: getString(data, 'version'),
     author: getString(data, 'author'),
+    license: getString(data, 'license'),
     base_url,
     type,
     payment,
@@ -85,6 +94,7 @@ function buildManifest(
     sla: getString(data, 'sla'),
     rateLimit: getString(data, 'rateLimit'),
     sandbox: getString(data, 'sandbox'),
+    allowedTools,
     body
   }
 }
@@ -139,6 +149,18 @@ function parseEndpoints(data: Record<string, unknown>): EndpointSpec[] {
         outputSchema: getObject(ep, 'outputSchema')
       }
     })
+}
+
+function parseAllowedTools(
+  data: Record<string, unknown>
+): string[] | undefined {
+  // Support both 'allowed-tools' (Anthropic convention) and 'allowedTools'
+  const raw = data['allowed-tools'] ?? data.allowedTools
+  if (typeof raw === 'string') return [raw]
+  if (Array.isArray(raw)) {
+    return raw.filter(v => typeof v === 'string')
+  }
+  return undefined
 }
 
 // ── Helpers ─────────────────────────────────────────────

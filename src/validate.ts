@@ -26,15 +26,25 @@ const STELLAR_ADDRESS_RE = /^G[A-Z2-7]{55}$/
 export function validateSkill(manifest: SkillManifest): ValidationResult {
   const errors: ValidationError[] = []
   const warnings: ValidationWarning[] = []
+  const isSkillType = manifest.type === 'SKILL'
 
   validateName(manifest.name, errors)
   validateDescription(manifest.description, errors)
-  validateBaseUrl(manifest.base_url, errors)
   validateType(manifest.type, errors)
-  validatePayment(manifest.payment, errors, warnings)
-  validateEndpoints(manifest.endpoints, errors, warnings)
   validateVersion(manifest.version, warnings)
   validateTags(manifest.tags, warnings)
+
+  // For SKILL type (pure agent instructions), base_url/payment/endpoints are optional
+  if (isSkillType) {
+    if (manifest.base_url) validateBaseUrl(manifest.base_url, errors)
+    if (manifest.payment.payTo) validatePayment(manifest.payment, errors, warnings)
+    if (manifest.endpoints.length > 0)
+      validateEndpoints(manifest.endpoints, errors, warnings)
+  } else {
+    validateBaseUrl(manifest.base_url, errors)
+    validatePayment(manifest.payment, errors, warnings)
+    validateEndpoints(manifest.endpoints, errors, warnings)
+  }
 
   return {
     valid: errors.length === 0,

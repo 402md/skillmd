@@ -6,7 +6,8 @@ export const SKILL_TYPES: readonly SkillType[] = [
   'PRODUCT',
   'SERVICE',
   'SUBSCRIPTION',
-  'CONTENT'
+  'CONTENT',
+  'SKILL'
 ] as const
 
 export const HTTP_METHODS: readonly HttpMethod[] = [

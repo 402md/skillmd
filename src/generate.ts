@@ -149,6 +149,7 @@ export function toOpenAPI(manifest: SkillManifest): OpenAPISpec {
 // ── Internal ────────────────────────────────────────────
 
 function buildFrontmatter(config: SkillConfig): Record<string, unknown> {
+  const isSkillType = (config.type ?? 'API') === 'SKILL'
   const fm: Record<string, unknown> = {
     name: config.name
   }
@@ -157,38 +158,45 @@ function buildFrontmatter(config: SkillConfig): Record<string, unknown> {
   fm.description = config.description
   if (config.version) fm.version = config.version
   if (config.author) fm.author = config.author
-  fm.base_url = config.base_url
+  if (config.license) fm.license = config.license
+  if (config.base_url) fm.base_url = config.base_url
   fm.type = config.type ?? 'API'
 
-  fm.payment = {
-    networks: config.payment.networks,
-    asset: config.payment.asset || 'USDC',
-    payTo: config.payment.payTo,
-    ...(config.payment.payToEvm && {
-      payToEvm: config.payment.payToEvm
-    }),
-    ...(config.payment.facilitator && {
-      facilitator: config.payment.facilitator
-    })
+  if (config.payment) {
+    fm.payment = {
+      networks: config.payment.networks,
+      asset: config.payment.asset || 'USDC',
+      payTo: config.payment.payTo,
+      ...(config.payment.payToEvm && {
+        payToEvm: config.payment.payToEvm
+      }),
+      ...(config.payment.facilitator && {
+        facilitator: config.payment.facilitator
+      })
+    }
   }
 
-  fm.endpoints = config.endpoints.map(ep => {
-    const entry: Record<string, unknown> = {
-      path: ep.path,
-      method: ep.method,
-      description: ep.description,
-      priceUsdc: ep.priceUsdc
-    }
-    if (ep.inputSchema) entry.inputSchema = ep.inputSchema
-    if (ep.outputSchema) entry.outputSchema = ep.outputSchema
-    return entry
-  })
+  if (config.endpoints?.length) {
+    fm.endpoints = config.endpoints.map(ep => {
+      const entry: Record<string, unknown> = {
+        path: ep.path,
+        method: ep.method,
+        description: ep.description,
+        priceUsdc: ep.priceUsdc
+      }
+      if (ep.inputSchema) entry.inputSchema = ep.inputSchema
+      if (ep.outputSchema) entry.outputSchema = ep.outputSchema
+      return entry
+    })
+  }
 
   if (config.tags?.length) fm.tags = config.tags
   if (config.category) fm.category = config.category
   if (config.sla) fm.sla = config.sla
   if (config.rateLimit) fm.rateLimit = config.rateLimit
   if (config.sandbox) fm.sandbox = config.sandbox
+  if (config.allowedTools?.length)
+    fm['allowed-tools'] = config.allowedTools
 
   return fm
 }
