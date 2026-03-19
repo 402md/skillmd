@@ -105,6 +105,41 @@ describe('toMcpToolDefinitions', () => {
     expect(tools[0].description).toContain('via base')
   })
 
+  it('shows dynamic pricing in description', () => {
+    const tools = toMcpToolDefinitions(
+      makeManifest({
+        endpoints: [
+          {
+            path: '/v1/checkout',
+            method: 'POST',
+            description: 'Checkout',
+            priceUsdc: 'dynamic',
+            estimatedPriceUsdc: '25.00'
+          }
+        ]
+      })
+    )
+    expect(tools[0].description).toContain('dynamic pricing')
+    expect(tools[0].description).toContain('~25.00 USDC est.')
+  })
+
+  it('shows dynamic pricing without estimate', () => {
+    const tools = toMcpToolDefinitions(
+      makeManifest({
+        endpoints: [
+          {
+            path: '/v1/checkout',
+            method: 'POST',
+            description: 'Checkout',
+            priceUsdc: 'dynamic'
+          }
+        ]
+      })
+    )
+    expect(tools[0].description).toContain('dynamic pricing')
+    expect(tools[0].description).not.toContain('est.')
+  })
+
   it('returns fallback tool for manifest with no endpoints', () => {
     const tools = toMcpToolDefinitions(
       makeManifest({ endpoints: [] })

@@ -293,6 +293,152 @@ describe('validateSkill', () => {
       result.warnings.find(w => w.field === 'payment.networks[0].payTo')
     ).toBeUndefined()
   })
+
+  it('accepts priceUsdc: "dynamic"', () => {
+    const result = validateSkill(
+      makeManifest({
+        endpoints: [
+          {
+            path: '/v1/checkout',
+            method: 'POST',
+            description: 'Checkout',
+            priceUsdc: 'dynamic',
+            estimatedPriceUsdc: '25.00'
+          }
+        ]
+      })
+    )
+    expect(result.valid).toBe(true)
+  })
+
+  it('warns for dynamic without estimate', () => {
+    const result = validateSkill(
+      makeManifest({
+        endpoints: [
+          {
+            path: '/v1/checkout',
+            method: 'POST',
+            description: 'Checkout',
+            priceUsdc: 'dynamic'
+          }
+        ]
+      })
+    )
+    expect(result.valid).toBe(true)
+    expect(result.warnings).toContainEqual(
+      expect.objectContaining({
+        field: 'endpoints[0].estimatedPriceUsdc',
+        code: 'MISSING_OPTIONAL'
+      })
+    )
+  })
+
+  it('warns for estimatedPriceUsdc on fixed price endpoint', () => {
+    const result = validateSkill(
+      makeManifest({
+        endpoints: [
+          {
+            path: '/v1/data',
+            method: 'GET',
+            description: 'Get data',
+            priceUsdc: '0.001',
+            estimatedPriceUsdc: '0.001'
+          }
+        ]
+      })
+    )
+    expect(result.valid).toBe(true)
+    expect(result.warnings).toContainEqual(
+      expect.objectContaining({
+        code: 'UNNECESSARY_FIELD'
+      })
+    )
+  })
+
+  it('validates duration format', () => {
+    const valid = validateSkill(
+      makeManifest({
+        endpoints: [
+          {
+            path: '/v1/subscribe',
+            method: 'POST',
+            description: 'Subscribe',
+            priceUsdc: '10.00',
+            duration: '30d'
+          }
+        ]
+      })
+    )
+    expect(valid.valid).toBe(true)
+
+    const invalid = validateSkill(
+      makeManifest({
+        endpoints: [
+          {
+            path: '/v1/subscribe',
+            method: 'POST',
+            description: 'Subscribe',
+            priceUsdc: '10.00',
+            duration: '30days'
+          }
+        ]
+      })
+    )
+    expect(invalid.valid).toBe(false)
+    expect(invalid.errors).toContainEqual(
+      expect.objectContaining({ code: 'INVALID_FORMAT', field: 'endpoints[0].duration' })
+    )
+  })
+
+  it('validates deliveryMode enum', () => {
+    const valid = validateSkill(
+      makeManifest({
+        endpoints: [
+          {
+            path: '/v1/jobs',
+            method: 'POST',
+            description: 'Create job',
+            priceUsdc: '5.00',
+            deliveryMode: 'polling'
+          }
+        ]
+      })
+    )
+    expect(valid.valid).toBe(true)
+
+    const invalid = validateSkill(
+      makeManifest({
+        endpoints: [
+          {
+            path: '/v1/jobs',
+            method: 'POST',
+            description: 'Create job',
+            priceUsdc: '5.00',
+            deliveryMode: 'carrier-pigeon' as any
+          }
+        ]
+      })
+    )
+    expect(invalid.valid).toBe(false)
+    expect(invalid.errors).toContainEqual(
+      expect.objectContaining({ code: 'INVALID_ENUM', field: 'endpoints[0].deliveryMode' })
+    )
+  })
+
+  it('validates auth config', () => {
+    const valid = validateSkill(
+      makeManifest({ auth: { method: 'wallet-signature', loginEndpoint: '/v1/auth' } })
+    )
+    expect(valid.valid).toBe(true)
+
+    const invalidPath = validateSkill(
+      makeManifest({ auth: { method: 'wallet-signature', loginEndpoint: 'v1/auth' } })
+    )
+    expect(invalidPath.valid).toBe(false)
+    expect(invalidPath.errors).toContainEqual(
+      expect.objectContaining({ field: 'auth.loginEndpoint', code: 'INVALID_FORMAT' })
+    )
+  })
 })
 
 describe('validateSkillMd', () => {

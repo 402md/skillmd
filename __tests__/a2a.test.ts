@@ -175,6 +175,25 @@ describe('toAgentCard', () => {
     expect(card.skills![0].tags).toEqual(['weather', 'forecast'])
   })
 
+  it('shows dynamic pricing in skill description', () => {
+    const card = toAgentCard(
+      makeManifest({
+        endpoints: [
+          {
+            path: '/v1/checkout',
+            method: 'POST',
+            description: 'Checkout',
+            priceUsdc: 'dynamic',
+            estimatedPriceUsdc: '25.00'
+          }
+        ]
+      })
+    )
+    expect(card.skills![0].description).toBe(
+      'POST /v1/checkout — dynamic (~25.00 USDC est.)'
+    )
+  })
+
   it('uses author as provider name when available', () => {
     const card = toAgentCard(makeManifest({ author: 'weatherco' }))
 

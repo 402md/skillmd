@@ -348,6 +348,75 @@ body`
     })
   })
 
+  it('parses dynamic pricing with estimatedPriceUsdc', () => {
+    const content = `---
+name: shop
+description: Shop
+base_url: https://api.shop.com
+type: PRODUCT
+pricingModel: cart
+payment:
+  asset: USDC
+  networks:
+    - network: base
+      payTo: "0x1234567890abcdef1234567890abcdef12345678"
+endpoints:
+  - path: /v1/orders
+    method: POST
+    description: Checkout
+    priceUsdc: dynamic
+    estimatedPriceUsdc: "25.00"
+    deliveryMode: sync
+  - path: /v1/subscribe
+    method: POST
+    description: Subscribe
+    priceUsdc: "10.00"
+    duration: "30d"
+---
+
+body`
+
+    const manifest = parseSkillMd(content)
+    expect(manifest.pricingModel).toBe('cart')
+    expect(manifest.endpoints[0].priceUsdc).toBe('dynamic')
+    expect(manifest.endpoints[0].estimatedPriceUsdc).toBe('25.00')
+    expect(manifest.endpoints[0].deliveryMode).toBe('sync')
+    expect(manifest.endpoints[1].duration).toBe('30d')
+  })
+
+  it('parses auth config', () => {
+    const content = `---
+name: saas
+description: SaaS
+base_url: https://api.saas.com
+type: SUBSCRIPTION
+pricingModel: subscription
+auth:
+  method: wallet-signature
+  loginEndpoint: /v1/auth
+payment:
+  asset: USDC
+  networks:
+    - network: base
+      payTo: "0x1234567890abcdef1234567890abcdef12345678"
+endpoints:
+  - path: /v1/subscribe
+    method: POST
+    description: Subscribe
+    priceUsdc: "10.00"
+    duration: "30d"
+---
+
+body`
+
+    const manifest = parseSkillMd(content)
+    expect(manifest.pricingModel).toBe('subscription')
+    expect(manifest.auth).toEqual({
+      method: 'wallet-signature',
+      loginEndpoint: '/v1/auth'
+    })
+  })
+
   it('converts legacy flat payTo/payToEvm to per-network config', () => {
     const content = `---
 name: legacy-multi
