@@ -38,17 +38,20 @@ export function validateSkill(manifest: SkillManifest): ValidationResult {
   validateVersion(manifest.version, warnings)
   validateTags(manifest.tags, warnings)
 
-  // For SKILL type (pure agent instructions), base_url/payment/endpoints are optional
+  // base_url, payment, and endpoints validation depends on whether endpoints exist
+  const hasEndpoints = manifest.endpoints.length > 0
   const hasNetworkWithPayTo = manifest.payment.networks.some(nc => nc.payTo)
-  if (isSkillType) {
-    if (manifest.base_url) validateBaseUrl(manifest.base_url, errors)
-    if (hasNetworkWithPayTo) validatePayment(manifest.payment, errors, warnings)
-    if (manifest.endpoints.length > 0)
-      validateEndpoints(manifest.endpoints, errors, warnings)
-  } else {
+
+  if (hasEndpoints) {
     validateBaseUrl(manifest.base_url, errors)
     validatePayment(manifest.payment, errors, warnings)
     validateEndpoints(manifest.endpoints, errors, warnings)
+  } else if (isSkillType) {
+    if (manifest.base_url) validateBaseUrl(manifest.base_url, errors)
+    if (hasNetworkWithPayTo) validatePayment(manifest.payment, errors, warnings)
+  } else {
+    if (manifest.base_url) validateBaseUrl(manifest.base_url, errors)
+    if (hasNetworkWithPayTo) validatePayment(manifest.payment, errors, warnings)
   }
 
   validatePricingModel(manifest.pricingModel, warnings)

@@ -71,11 +71,11 @@ function buildManifest(
   const rawType = getString(data, 'type') ?? (data.endpoints ? 'API' : 'SKILL')
   const type = SKILL_TYPES_SET.has(rawType) ? (rawType as SkillType) : 'API'
 
-  // base_url is optional for SKILL type (pure agent instructions)
-  const base_url =
-    type === 'SKILL'
-      ? (getString(data, 'base_url') ?? '')
-      : requireString(data, 'base_url')
+  // base_url is required only when endpoints are present (spec §3.4)
+  const hasEndpoints = Array.isArray(data.endpoints) && data.endpoints.length > 0
+  const base_url = hasEndpoints
+    ? requireString(data, 'base_url')
+    : (getString(data, 'base_url') ?? '')
 
   const payment = parsePayment(data)
   const endpoints = parseEndpoints(data)
